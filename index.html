@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Standup Timer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    font-family: 'Orbitron', sans-serif;
+    background: #000;
+    color: #fff;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  body { display: flex; align-items: center; justify-content: center; text-align: center; }
+  #app { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 2rem; }
+
+  /* Start screen */
+  .start-screen h1 {
+    font-size: 7rem;
+    font-weight: 900;
+    margin-bottom: 2rem;
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 30px rgba(255,255,255,0.4);
+  }
+  .start-screen p { font-size: 2rem; font-weight: 600; color: #bbb; margin-bottom: 2.5rem; letter-spacing: 0.15em; }
+  .names-preview {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 2rem;
+    color: #888;
+    margin-bottom: 3.5rem;
+    letter-spacing: 0.2em;
+  }
+
+  button {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2rem;
+    padding: 1.5rem 3rem;
+    border: 3px solid #fff;
+    background: transparent;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    transition: transform 0.1s, background 0.2s, box-shadow 0.2s;
+    min-width: 14rem;
+  }
+  button:hover { background: #fff; color: #000; box-shadow: 0 0 30px rgba(255,255,255,0.6); }
+  button:active { transform: scale(0.97); }
+  button.ghost { visibility: hidden; pointer-events: none; }
+
+  .btn-row { display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; }
+  .btn-done { border-color: #4ade80; color: #4ade80; }
+  .btn-done:hover { background: #4ade80; color: #000; box-shadow: 0 0 30px rgba(74,222,128,0.7); }
+  .btn-over { border-color: #fbbf24; color: #fbbf24; }
+  .btn-over:hover { background: #fbbf24; color: #000; box-shadow: 0 0 30px rgba(251,191,36,0.7); }
+  .btn-pause { border-color: #60a5fa; color: #60a5fa; }
+  .btn-pause:hover { background: #60a5fa; color: #000; box-shadow: 0 0 30px rgba(96,165,250,0.7); }
+
+  .paused-banner {
+    color: #60a5fa;
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: 0.3em;
+    text-shadow: 0 0 20px rgba(96,165,250,0.7);
+  }
+
+  /* Flash screen */
+  .flash-screen {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    animation: flash 0.5s ease-in-out infinite alternate;
+  }
+  @keyframes flash {
+    from { opacity: 0.4; transform: scale(0.95); }
+    to   { opacity: 1;   transform: scale(1.05); }
+  }
+  .flash-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16rem;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    text-shadow: 0 0 80px currentColor, 0 0 30px currentColor;
+  }
+
+  /* Timer screen */
+  .timer-screen { display: flex; flex-direction: column; align-items: center; gap: 2rem; width: 100%; }
+  .timer-name {
+    font-size: 7rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 40px currentColor;
+  }
+  .timer-clock {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 16rem;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    text-shadow: 0 0 40px rgba(255,255,255,0.3);
+  }
+  .timer-clock.overtime { color: #ef4444; text-shadow: 0 0 50px rgba(239,68,68,0.8); }
+  .timer-meta { color: #aaa; font-size: 1.75rem; font-weight: 600; letter-spacing: 0.2em; }
+
+  /* Summary screen */
+  .summary-screen { width: 100%; max-width: 900px; }
+  .summary-screen h1 {
+    font-size: 5rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    margin-bottom: 3rem;
+    text-shadow: 0 0 30px rgba(255,255,255,0.4);
+  }
+  .summary-list { list-style: none; margin-bottom: 2.5rem; }
+  .summary-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1.5rem 2rem; margin-bottom: 1rem;
+    border: 2px solid #333; border-radius: 4px;
+    font-size: 2.25rem;
+  }
+  .summary-row .name { font-weight: 800; letter-spacing: 0.1em; text-shadow: 0 0 20px currentColor; }
+  .summary-row .time {
+    font-family: 'Share Tech Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    color: #aaa;
+    letter-spacing: 0.05em;
+  }
+  .summary-row .time.over { color: #ef4444; }
+  .summary-row .time.under { color: #4ade80; }
+  .total-row { border-color: #fff; margin-top: 2rem; font-weight: 900; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(() => {
+  const PEOPLE = {
+    "Brian":  "#ffb800",
+    "Mary":   "#38bdf8",
+    "Amber":  "#d946ef",
+    "Lori":   "#ff1493",
+    "Jeremy": "#a3e635",
+  };
+  const NAMES = Object.keys(PEOPLE);
+  const ALLOTTED_SECONDS = 5 * 60;
+
+  const app = document.getElementById("app");
+
+  let state = {
+    screen: "start",
+    order: [],
+    currentIndex: 0,
+    remaining: ALLOTTED_SECONDS,
+    elapsed: 0,
+    overtimeAdded: 0,
+    paused: false,
+    results: [],
+    intervalId: null,
+    flashTimeoutId: null,
+  };
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function colorFor(name) {
+    return PEOPLE[name] || "#ffffff";
+  }
+
+  function formatTime(totalSeconds) {
+    const sign = totalSeconds < 0 ? "-" : "";
+    const s = Math.abs(totalSeconds);
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${sign}${m}:${sec.toString().padStart(2, "0")}`;
+  }
+
+  function formatElapsed(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  }
+
+  function clearTimers() {
+    if (state.intervalId) { clearInterval(state.intervalId); state.intervalId = null; }
+    if (state.flashTimeoutId) { clearTimeout(state.flashTimeoutId); state.flashTimeoutId = null; }
+  }
+
+  function render() {
+    clearTimers();
+    app.innerHTML = "";
+    if (state.screen === "start") renderStart();
+    else if (state.screen === "next") renderNext();
+    else if (state.screen === "flash") renderFlash();
+    else if (state.screen === "timer") renderTimer();
+    else if (state.screen === "summary") renderSummary();
+  }
+
+  function renderStart() {
+    const el = document.createElement("div");
+    el.className = "start-screen";
+    el.innerHTML = `
+      <h1>Standup Timer</h1>
+      <p>5 minutes per person · randomized</p>
+      <div class="names-preview">${NAMES.join(" · ")}</div>
+      <div class="btn-row">
+        <button class="ghost">+1 Minute</button>
+        <button class="ghost">Pause</button>
+        <button class="btn-done" id="startBtn">Start</button>
+      </div>
+    `;
+    app.appendChild(el);
+    document.getElementById("startBtn").addEventListener("click", startRound);
+  }
+
+  function startRound() {
+    state.order = shuffle(NAMES);
+    state.currentIndex = 0;
+    state.results = [];
+    beginPerson();
+  }
+
+  function beginPerson() {
+    state.remaining = ALLOTTED_SECONDS;
+    state.elapsed = 0;
+    state.overtimeAdded = 0;
+    state.paused = false;
+    state.screen = "flash";
+    render();
+    state.flashTimeoutId = setTimeout(() => {
+      state.screen = "timer";
+      render();
+    }, 2500);
+  }
+
+  function renderNext() {
+    const el = document.createElement("div");
+    el.className = "start-screen";
+    el.innerHTML = `
+      <h1>Standup Timer</h1>
+      <p>5 minutes per person · randomized</p>
+      <div class="names-preview">${NAMES.join(" · ")}</div>
+      <div class="btn-row">
+        <button class="ghost">+1 Minute</button>
+        <button class="ghost">Pause</button>
+        <button class="btn-done" id="nextBtn">Next</button>
+      </div>
+    `;
+    app.appendChild(el);
+    document.getElementById("nextBtn").addEventListener("click", beginPerson);
+  }
+
+  function renderFlash() {
+    const name = state.order[state.currentIndex];
+    const color = colorFor(name);
+    const el = document.createElement("div");
+    el.className = "flash-screen";
+    el.innerHTML = `<div class="flash-name" style="color:${color}">${name}</div>`;
+    app.appendChild(el);
+  }
+
+  function renderTimer() {
+    const name = state.order[state.currentIndex];
+    const color = colorFor(name);
+    const isOvertime = state.remaining < 0;
+
+    const el = document.createElement("div");
+    el.className = "timer-screen";
+    el.innerHTML = `
+      <div class="timer-name" style="color:${color}">${name}</div>
+      <div class="timer-clock ${isOvertime ? "overtime" : ""}">${formatTime(state.remaining)}</div>
+      <div class="timer-meta">Person ${state.currentIndex + 1} of ${state.order.length}${state.overtimeAdded ? ` · +${state.overtimeAdded}:00 overtime` : ""}</div>
+      ${state.paused ? `<div class="paused-banner">● Paused for Discussion</div>` : ""}
+      <div class="btn-row">
+        <button class="btn-over" id="overBtn">+1 Minute</button>
+        <button class="btn-pause" id="pauseBtn">${state.paused ? "Resume" : "Pause"}</button>
+        <button class="btn-done" id="doneBtn">Done</button>
+      </div>
+    `;
+    app.appendChild(el);
+
+    document.getElementById("doneBtn").addEventListener("click", finishPerson);
+    document.getElementById("overBtn").addEventListener("click", () => {
+      state.remaining += 60;
+      state.overtimeAdded += 1;
+      render();
+    });
+    document.getElementById("pauseBtn").addEventListener("click", () => {
+      state.paused = !state.paused;
+      render();
+    });
+
+    if (!state.paused) {
+      state.intervalId = setInterval(() => {
+        state.remaining -= 1;
+        state.elapsed += 1;
+        const clockEl = app.querySelector(".timer-clock");
+        const metaEl = app.querySelector(".timer-meta");
+        if (clockEl) {
+          clockEl.textContent = formatTime(state.remaining);
+          if (state.remaining < 0) clockEl.classList.add("overtime");
+        }
+        if (metaEl) {
+          metaEl.textContent = `Person ${state.currentIndex + 1} of ${state.order.length}${state.overtimeAdded ? ` · +${state.overtimeAdded}:00 overtime` : ""}`;
+        }
+      }, 1000);
+    }
+  }
+
+  function finishPerson() {
+    const name = state.order[state.currentIndex];
+    state.results.push({
+      name,
+      color: colorFor(name),
+      elapsed: state.elapsed,
+      overtimeAdded: state.overtimeAdded,
+    });
+
+    state.currentIndex += 1;
+    if (state.currentIndex >= state.order.length) {
+      state.screen = "summary";
+    } else {
+      state.screen = "next";
+    }
+    render();
+  }
+
+  function renderSummary() {
+    const total = state.results.reduce((sum, r) => sum + r.elapsed, 0);
+
+    const rows = state.results.map(r => {
+      const diff = r.elapsed - ALLOTTED_SECONDS;
+      let cls = "";
+      let label = "";
+      if (diff > 0) { cls = "over"; label = ` (+${formatElapsed(diff)})`; }
+      else if (diff < 0) { cls = "under"; label = ` (-${formatElapsed(-diff)})`; }
+      return `
+        <li class="summary-row">
+          <span class="name" style="color:${r.color}">${r.name}</span>
+          <span class="time ${cls}">${formatElapsed(r.elapsed)}${label}</span>
+        </li>
+      `;
+    }).join("");
+
+    const el = document.createElement("div");
+    el.className = "summary-screen";
+    el.innerHTML = `
+      <ul class="summary-list">
+        ${rows}
+        <li class="summary-row total-row">
+          <span class="name">Total</span>
+          <span class="time">${formatElapsed(total)}</span>
+        </li>
+      </ul>
+      <div class="btn-row">
+        <button id="againBtn">Run Again</button>
+      </div>
+    `;
+    app.appendChild(el);
+    document.getElementById("againBtn").addEventListener("click", () => {
+      state.screen = "start";
+      render();
+    });
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
