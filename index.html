@@ -92,29 +92,49 @@
     margin-bottom: 3rem;
     letter-spacing: 0.2em;
   }
-  .team-list { display: flex; flex-direction: column; gap: 1.25rem; }
+  .team-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
   .team-btn {
     width: 100%;
     min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
-    padding: 1.5rem 2rem;
+    padding: 2rem 1.5rem;
   }
   .team-btn .team-name {
-    font-size: 2.5rem;
+    font-size: 2rem;
     font-weight: 900;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.15em;
+    color: var(--team-color, #fff);
+    text-shadow: 0 0 20px var(--team-color, #fff);
+    transition: color 0.2s, text-shadow 0.2s;
+    white-space: nowrap;
   }
   .team-btn .team-members {
     font-family: 'Share Tech Mono', monospace;
     color: #888;
-    font-size: 1rem;
+    font-size: 0.95rem;
     letter-spacing: 0.15em;
     text-transform: none;
   }
+  .team-btn {
+    border-color: var(--team-color, #fff);
+  }
+  .team-btn:hover {
+    background: var(--team-color, #fff);
+    color: #000;
+    box-shadow: 0 0 30px var(--team-color, #fff);
+  }
+  .team-btn:hover .team-name { color: #000; text-shadow: none; }
   .team-btn:hover .team-members { color: #000; }
+  .custom-btn { width: 100%; }
 
   /* Configure (custom) screen */
   .config-screen { width: 100%; max-width: 700px; }
@@ -237,11 +257,12 @@
 <script>
 (() => {
   const TEAMS = {
-    "ELEVATE":  ["Brian", "Mary", "Amber", "Lori", "Jeremy"],
-    "MKTG":     ["Jill", "Ashley", "Adam", "Christine", "Tony"],
-    "BILLING":  ["Nicole", "Jessica", "Trina", "Heather", "Jeremy"],
-    "PMO":      ["Mark", "Nate", "Jeremy"],
+    "ELEVATE":      { color: "#7FDBFF", members: ["Brian", "Mary", "Amber", "Lori", "Jeremy"] },
+    "MARKETING":    { color: "#FF6B6B", members: ["Jill", "Ashley", "Adam", "Christine", "Tony"] },
+    "ENERGY":       { color: "#FFB347", members: ["Nicole", "Jessica", "Trina", "Heather", "Jeremy"] },
+    "PROJECT MGMT": { color: "#DFFF00", members: ["Mark", "Nate", "Jeremy"] },
   };
+  const CUSTOM_COLOR = "#C0C0C0";
 
   const COLOR_PALETTE = [
     "#ffb800", // gold
@@ -336,25 +357,25 @@
 
   // ---------- Splash ----------
   function renderSplash() {
-    const teamButtons = Object.entries(TEAMS).map(([name, people]) => `
-      <button class="team-btn" data-team="${name}">
+    const teamButtons = Object.entries(TEAMS).map(([name, info]) => `
+      <button class="team-btn" data-team="${name}" style="--team-color:${info.color}">
         <span class="team-name">${name}</span>
-        <span class="team-members">${people.join(" · ")} · ${people.length} people · 5:00 each</span>
+        <span class="team-members">${info.members.join(" · ")}</span>
       </button>
     `).join("");
 
     const el = document.createElement("div");
     el.className = "splash-screen";
     el.innerHTML = `
-      <h1>Standup Timer</h1>
+      <h1>Meeting Timer</h1>
       <p class="subtitle">Choose your team</p>
-      <div class="team-list">
+      <div class="team-grid">
         ${teamButtons}
-        <button class="team-btn btn-done" data-team="__custom__">
-          <span class="team-name">+ Custom Group</span>
-          <span class="team-members">Up to 10 people · scales to fit 30:00</span>
-        </button>
       </div>
+      <button class="team-btn custom-btn" data-team="__custom__" style="--team-color:${CUSTOM_COLOR}">
+        <span class="team-name">+ Custom Group</span>
+        <span class="team-members">Up to 10 people · scales to fit 30:00</span>
+      </button>
     `;
     app.appendChild(el);
 
@@ -371,9 +392,13 @@
     });
   }
 
+  function teamColor() {
+    return state.team && TEAMS[state.team] ? TEAMS[state.team].color : CUSTOM_COLOR;
+  }
+
   function selectPresetTeam(teamName) {
     state.team = teamName;
-    state.members = TEAMS[teamName].slice();
+    state.members = TEAMS[teamName].members.slice();
     state.secondsPerPerson = PRESET_SECONDS;
     state.screen = "start";
     render();
@@ -457,10 +482,11 @@
   // ---------- Start ----------
   function renderStart() {
     const totalMin = formatTime(state.secondsPerPerson * state.members.length);
+    const c = teamColor();
     const el = document.createElement("div");
     el.className = "start-screen";
     el.innerHTML = `
-      <h1>${state.team}</h1>
+      <h1 style="color:${c}; text-shadow: 0 0 30px ${c};">${state.team}</h1>
       <p>${formatTime(state.secondsPerPerson)} per person · ${totalMin} total</p>
       <div class="names-preview">${state.members.join(" · ")}</div>
       <div class="btn-row">
@@ -503,10 +529,11 @@
   // ---------- Next ----------
   function renderNext() {
     const totalMin = formatTime(state.secondsPerPerson * state.members.length);
+    const c = teamColor();
     const el = document.createElement("div");
     el.className = "start-screen";
     el.innerHTML = `
-      <h1>${state.team}</h1>
+      <h1 style="color:${c}; text-shadow: 0 0 30px ${c};">${state.team}</h1>
       <p>${formatTime(state.secondsPerPerson)} per person · ${totalMin} total</p>
       <div class="names-preview">${state.members.join(" · ")}</div>
       <div class="btn-row">
@@ -630,10 +657,11 @@
       ? ` (-${formatElapsed(totalSaved)})`
       : (totalSaved < 0 ? ` (+${formatElapsed(-totalSaved)})` : "");
 
+    const c = teamColor();
     const el = document.createElement("div");
     el.className = "summary-screen";
     el.innerHTML = `
-      <h1>${state.team} · Done</h1>
+      <h1 style="color:${c}; text-shadow: 0 0 30px ${c};">${state.team} · Done</h1>
       <ul class="summary-list">
         ${rows}
         <li class="summary-row total-row">
