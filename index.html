@@ -446,13 +446,12 @@
     const el = document.createElement("div");
     el.className = "config-screen";
     el.innerHTML = `
-      <h1>Custom Group</h1>
+      <h1>Custom</h1>
       <p class="subtitle">Up to ${MAX_CUSTOM_PEOPLE} people · scales to fit 30:00</p>
       <textarea id="nameInput" placeholder="One name per line..."></textarea>
       <div class="config-stats" id="configStats">&nbsp;</div>
       <div class="btn-row">
         <button class="btn-back" id="backBtn">Back</button>
-        <button class="ghost">Pause</button>
         <button class="btn-done" id="continueBtn" disabled>Continue</button>
       </div>
     `;
