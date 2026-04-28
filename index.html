@@ -23,19 +23,21 @@
 
   /* Start screen */
   .start-screen h1 {
-    font-size: 7rem;
+    font-size: clamp(3rem, 8vw, 7rem);
     font-weight: 900;
     margin-bottom: 2rem;
     letter-spacing: 0.1em;
     text-shadow: 0 0 30px rgba(255,255,255,0.4);
+    line-height: 1.05;
   }
   .start-screen p { font-size: 2rem; font-weight: 600; color: #bbb; margin-bottom: 2.5rem; letter-spacing: 0.15em; }
   .names-preview {
     font-family: 'Share Tech Mono', monospace;
-    font-size: 2rem;
+    font-size: clamp(0.95rem, 2vw, 1.6rem);
     color: #888;
     margin-bottom: 3.5rem;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.15em;
+    line-height: 1.5;
   }
 
   button {
@@ -196,19 +198,24 @@
   }
   .flash-name {
     font-family: 'Orbitron', sans-serif;
-    font-size: 16rem;
+    font-size: min(16rem, calc(120vw / var(--name-chars, 5)));
     font-weight: 900;
     letter-spacing: 0.05em;
     text-shadow: 0 0 80px currentColor, 0 0 30px currentColor;
+    line-height: 1;
+    text-align: center;
+    padding: 0 1rem;
   }
 
   /* Timer screen */
   .timer-screen { display: flex; flex-direction: column; align-items: center; gap: 2rem; width: 100%; }
   .timer-name {
-    font-size: 7rem;
+    font-size: min(7rem, calc(75vw / var(--name-chars, 5)));
     font-weight: 900;
     letter-spacing: 0.1em;
     text-shadow: 0 0 40px currentColor;
+    line-height: 1;
+    text-align: center;
   }
   .timer-clock {
     font-family: 'Share Tech Mono', monospace;
@@ -262,10 +269,10 @@
 <script>
 (() => {
   const TEAMS = {
-    "ELEVATE":      { color: "#7FDBFF", members: ["Brian", "Mary", "Amber", "Lori", "Jeremy"] },
-    "MARKETING":    { color: "#FF6B6B", members: ["Jill", "Ashley", "Adam", "Christine", "Tony"] },
-    "ENERGY":       { color: "#FF7A1A", members: ["Nicole", "Jessica", "Trina", "Heather", "Jeremy"] },
-    "PROJECT MGMT": { color: "#DFFF00", members: ["Mark", "Nate", "Jeremy"] },
+    "ELEVATE":      { color: "#7FDBFF", blockFirst: "Brian",            members: ["Brian", "Mary", "Amber", "Lori", "Jeremy"] },
+    "MARKETING":    { color: "#FF6B6B", blockFirst: "Tony",             members: ["Jill", "Ashley", "Adam", "Christine", "Tony"] },
+    "ENERGY":       { color: "#FF7A1A", blockFirst: "Nicole",           members: ["Nicole", "Jessica", "Trina", "Heather", "Jeremy"] },
+    "PROJECT MGMT": { color: "#DFFF00", blockFirst: "Mark Christensen", members: ["Jeremy Gray", "Mark Christensen", "Nate Katzer"] },
   };
   const CUSTOM_COLOR = "#C0C0C0";
 
@@ -312,6 +319,31 @@
       [a[i], a[j]] = [a[j], a[i]];
     }
     return a;
+  }
+
+  // Shuffle, but make sure `blockedName` doesn't end up first.
+  function shuffleAvoidingFirst(arr, blockedName) {
+    const s = shuffle(arr);
+    if (s.length > 1 && s[0] === blockedName) {
+      const swap = 1 + Math.floor(Math.random() * (s.length - 1));
+      [s[0], s[swap]] = [s[swap], s[0]];
+    }
+    return s;
+  }
+
+  // Custom-group constraint: original first can't go first, original last can't go last.
+  function shuffleCustomConstrained(arr, firstName, lastName) {
+    if (arr.length < 2) return shuffle(arr);
+    for (let i = 0; i < 200; i++) {
+      const s = shuffle(arr);
+      if (s[0] !== firstName && s[s.length - 1] !== lastName) return s;
+    }
+    // Fallback: avoid first at minimum.
+    return shuffleAvoidingFirst(arr, firstName);
+  }
+
+  function alphabetized(arr) {
+    return arr.slice().sort((a, b) => a.localeCompare(b));
   }
 
   function assignRandomColors(names) {
@@ -493,7 +525,7 @@
     el.innerHTML = `
       <h1 style="color:${c}; text-shadow: 0 0 30px ${c};">${state.team}</h1>
       <p>${formatTime(state.secondsPerPerson)} per person · ${totalMin} total</p>
-      <div class="names-preview">${state.members.join(" · ")}</div>
+      <div class="names-preview">${alphabetized(state.members).join(" · ")}</div>
       <div class="btn-row">
         <button class="btn-back" id="backBtn">Back</button>
         <button class="ghost">Pause</button>
@@ -510,7 +542,15 @@
   }
 
   function startRound() {
-    const order = shuffle(state.members);
+    let order;
+    if (state.team === "CUSTOM") {
+      const first = state.members[0];
+      const last = state.members[state.members.length - 1];
+      order = shuffleCustomConstrained(state.members, first, last);
+    } else {
+      const blocked = TEAMS[state.team]?.blockFirst;
+      order = blocked ? shuffleAvoidingFirst(state.members, blocked) : shuffle(state.members);
+    }
     state.members = order;
     state.colors = assignRandomColors(order);
     state.currentIndex = 0;
@@ -540,7 +580,7 @@
     el.innerHTML = `
       <h1 style="color:${c}; text-shadow: 0 0 30px ${c};">${state.team}</h1>
       <p>${formatTime(state.secondsPerPerson)} per person · ${totalMin} total</p>
-      <div class="names-preview">${state.members.join(" · ")}</div>
+      <div class="names-preview">${alphabetized(state.members).join(" · ")}</div>
       <div class="btn-row">
         <button class="ghost">+1 Minute</button>
         <button class="ghost">Pause</button>
@@ -557,7 +597,7 @@
     const color = state.colors[name] || "#fff";
     const el = document.createElement("div");
     el.className = "flash-screen";
-    el.innerHTML = `<div class="flash-name" style="color:${color}">${name}</div>`;
+    el.innerHTML = `<div class="flash-name" style="--name-chars:${name.length}; color:${color}">${name}</div>`;
     app.appendChild(el);
   }
 
@@ -570,7 +610,7 @@
     const el = document.createElement("div");
     el.className = "timer-screen";
     el.innerHTML = `
-      <div class="timer-name" style="color:${color}">${name}</div>
+      <div class="timer-name" style="--name-chars:${name.length}; color:${color}">${name}</div>
       <div class="timer-clock ${isOvertime ? "overtime" : ""}">${formatTime(state.remaining)}</div>
       <div class="timer-meta">Person ${state.currentIndex + 1} of ${state.members.length}${state.overtimeAdded ? ` · +${state.overtimeAdded}:00 overtime` : ""}</div>
       ${state.paused ? `<div class="paused-banner">● Paused for Discussion</div>` : ""}
