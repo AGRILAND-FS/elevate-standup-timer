@@ -331,6 +331,18 @@
     border-color: #fbbf24;
     box-shadow: 0 0 30px rgba(251,191,36,0.4);
   }
+  .summary-row.absent {
+    opacity: 0.4;
+    border-style: dashed;
+  }
+  .summary-row.absent .name { text-shadow: none; }
+  .summary-row.absent .time {
+    font-family: 'Orbitron', sans-serif;
+    text-transform: uppercase;
+    font-size: 0.7em;
+    letter-spacing: 0.3em;
+    color: #888;
+  }
   .total-row { border-color: #fff; margin-top: 2rem; font-weight: 900; }
 </style>
 </head>
@@ -363,6 +375,7 @@
   const PRESET_SECONDS = 5 * 60;
   const MAX_TOTAL_SECONDS = 30 * 60;
   const MAX_CUSTOM_PEOPLE = 10;
+  const ABSENT_THRESHOLD = 10; // <10s elapsed = the person wasn't there
   const LEADERBOARD_KEY = "meeting-timer-leaderboard-v2";
 
   const app = document.getElementById("app");
@@ -434,6 +447,7 @@
     const data = loadLeaderboard();
     const teamData = data[team] || {};
     results.forEach(r => {
+      if (r.elapsed < ABSENT_THRESHOLD) return; // absent — don't pollute totals
       const entry = teamData[r.name] || { saved: 0, elapsed: 0, allotted: 0, runs: 0, lastSeen: null };
       entry.saved += (r.allotted - r.elapsed);
       entry.elapsed += r.elapsed;
@@ -795,18 +809,21 @@
 
   // ---------- Summary ----------
   function renderSummary() {
-    const total = state.results.reduce((sum, r) => sum + r.elapsed, 0);
-    const totalAllotted = state.results.reduce((sum, r) => sum + r.allotted, 0);
+    const present = state.results.filter(r => r.elapsed >= ABSENT_THRESHOLD);
+    const absent = state.results.filter(r => r.elapsed < ABSENT_THRESHOLD);
+
+    const total = present.reduce((sum, r) => sum + r.elapsed, 0);
+    const totalAllotted = present.reduce((sum, r) => sum + r.allotted, 0);
     const totalSaved = totalAllotted - total;
 
-    // Rank by most time saved (allotted - elapsed), descending
-    const ranked = state.results
+    // Rank only people who were actually present
+    const ranked = present
       .map(r => ({ ...r, saved: r.allotted - r.elapsed }))
       .sort((a, b) => b.saved - a.saved);
 
     const winnerName = ranked[0]?.name;
 
-    const rows = ranked.map(r => {
+    const presentRows = ranked.map(r => {
       const isWinner = r.name === winnerName;
       let cls = "";
       let label = "";
@@ -820,6 +837,15 @@
         </li>
       `;
     }).join("");
+
+    const absentRows = absent.map(r => `
+      <li class="summary-row absent">
+        <span class="name" style="color:${r.color}">${r.name}</span>
+        <span class="time">Absent</span>
+      </li>
+    `).join("");
+
+    const rows = presentRows + absentRows;
 
     const totalCls = totalSaved > 0 ? "under" : (totalSaved < 0 ? "over" : "");
     const totalLabel = totalSaved > 0
