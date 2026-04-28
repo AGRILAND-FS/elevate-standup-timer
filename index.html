@@ -229,6 +229,77 @@
   .timer-clock.overtime { color: #ef4444; text-shadow: 0 0 50px rgba(239,68,68,0.8); }
   .timer-meta { color: #aaa; font-size: 1.75rem; font-weight: 600; letter-spacing: 0.2em; }
 
+  /* Leaderboard link on splash */
+  .leaderboard-link {
+    margin-top: 2.5rem;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1rem;
+    color: #888;
+    letter-spacing: 0.2em;
+    cursor: pointer;
+    background: none;
+    border: none;
+    min-width: 0;
+    padding: 0.5rem 1rem;
+    text-transform: uppercase;
+  }
+  .leaderboard-link:hover { background: none; color: #fff; box-shadow: none; }
+
+  /* Leaderboard screen */
+  .leaderboard-screen { width: 100%; max-width: 900px; }
+  .leaderboard-screen h1 {
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 0 30px rgba(255,255,255,0.4);
+  }
+  .leaderboard-screen .subtitle {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.95rem;
+    color: #888;
+    letter-spacing: 0.15em;
+    margin-bottom: 2rem;
+    text-transform: none;
+  }
+  .leaderboard-list { list-style: none; margin-bottom: 2rem; }
+  .leaderboard-row {
+    display: grid;
+    grid-template-columns: 3rem 1fr auto auto;
+    gap: 1.5rem;
+    align-items: center;
+    padding: 1rem 1.5rem; margin-bottom: 0.75rem;
+    border: 2px solid #333; border-radius: 4px;
+    font-size: clamp(1.1rem, 2vw, 1.75rem);
+    text-align: left;
+  }
+  .leaderboard-row .rank { font-weight: 900; text-align: center; font-family: 'Share Tech Mono', monospace; }
+  .leaderboard-row .name { font-weight: 800; letter-spacing: 0.1em; }
+  .leaderboard-row .runs {
+    font-family: 'Share Tech Mono', monospace;
+    color: #888;
+    font-size: 0.85em;
+    letter-spacing: 0.1em;
+    text-transform: none;
+  }
+  .leaderboard-row .saved {
+    font-family: 'Share Tech Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.05em;
+  }
+  .leaderboard-row .saved.under { color: #4ade80; }
+  .leaderboard-row .saved.over { color: #ef4444; }
+  .leaderboard-row.top1 { border-color: #fbbf24; box-shadow: 0 0 30px rgba(251,191,36,0.4); }
+  .leaderboard-row.top2 { border-color: #cbd5e1; }
+  .leaderboard-row.top3 { border-color: #fb923c; }
+  .empty-leaderboard {
+    font-family: 'Share Tech Mono', monospace;
+    color: #666;
+    font-size: 1.25rem;
+    letter-spacing: 0.15em;
+    padding: 3rem 0;
+  }
+
   /* Summary screen */
   .summary-screen { width: 100%; max-width: 900px; }
   .summary-screen h1 {
@@ -292,6 +363,7 @@
   const PRESET_SECONDS = 5 * 60;
   const MAX_TOTAL_SECONDS = 30 * 60;
   const MAX_CUSTOM_PEOPLE = 10;
+  const LEADERBOARD_KEY = "meeting-timer-leaderboard-v1";
 
   const app = document.getElementById("app");
 
@@ -346,6 +418,34 @@
     return arr.slice().sort((a, b) => a.localeCompare(b));
   }
 
+  // ---------- Leaderboard persistence (localStorage) ----------
+  function loadLeaderboard() {
+    try {
+      const raw = localStorage.getItem(LEADERBOARD_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  }
+  function persistLeaderboard(data) {
+    try { localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(data)); } catch {}
+  }
+  function recordRun(team, results) {
+    const data = loadLeaderboard();
+    results.forEach(r => {
+      const entry = data[r.name] || { saved: 0, elapsed: 0, allotted: 0, runs: 0, lastTeam: null, lastSeen: null };
+      entry.saved += (r.allotted - r.elapsed);
+      entry.elapsed += r.elapsed;
+      entry.allotted += r.allotted;
+      entry.runs += 1;
+      entry.lastTeam = team;
+      entry.lastSeen = new Date().toISOString();
+      data[r.name] = entry;
+    });
+    persistLeaderboard(data);
+  }
+  function clearLeaderboard() {
+    try { localStorage.removeItem(LEADERBOARD_KEY); } catch {}
+  }
+
   function assignRandomColors(names) {
     const palette = shuffle(COLOR_PALETTE);
     const out = {};
@@ -390,6 +490,7 @@
     else if (state.screen === "flash") renderFlash();
     else if (state.screen === "timer") renderTimer();
     else if (state.screen === "summary") renderSummary();
+    else if (state.screen === "leaderboard") renderLeaderboard();
   }
 
   // ---------- Splash ----------
@@ -413,6 +514,7 @@
         <span class="team-name">+ Custom Group</span>
         <span class="team-members">Up to 10 people · scales to fit 30:00</span>
       </button>
+      <button class="leaderboard-link" id="leaderboardLink">🏆 View Leaderboard</button>
     `;
     app.appendChild(el);
 
@@ -426,6 +528,11 @@
           selectPresetTeam(team);
         }
       });
+    });
+
+    document.getElementById("leaderboardLink").addEventListener("click", () => {
+      state.screen = "leaderboard";
+      render();
     });
   }
 
@@ -661,6 +768,7 @@
 
     state.currentIndex += 1;
     if (state.currentIndex >= state.members.length) {
+      recordRun(state.team, state.results);
       state.screen = "summary";
     } else {
       state.screen = "next";
@@ -714,7 +822,8 @@
         </li>
       </ul>
       <div class="btn-row">
-        <button id="againBtn">Run Again</button>
+        <button id="leaderboardBtn">🏆 Leaderboard</button>
+        <button class="btn-done" id="againBtn">Run Again</button>
       </div>
     `;
     app.appendChild(el);
@@ -726,6 +835,68 @@
       state.results = [];
       render();
     });
+    document.getElementById("leaderboardBtn").addEventListener("click", () => {
+      state.screen = "leaderboard";
+      render();
+    });
+  }
+
+  // ---------- Leaderboard ----------
+  function renderLeaderboard() {
+    const data = loadLeaderboard();
+    const entries = Object.entries(data)
+      .map(([name, stats]) => ({ name, ...stats }))
+      .sort((a, b) => b.saved - a.saved);
+
+    const rankIcon = i => i === 0 ? "🚀" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`;
+
+    let body;
+    if (entries.length === 0) {
+      body = `<div class="empty-leaderboard">No data yet — run a standup to start tracking</div>`;
+    } else {
+      const rows = entries.map((e, i) => {
+        const cls = i === 0 ? "top1" : i === 1 ? "top2" : i === 2 ? "top3" : "";
+        const savedCls = e.saved > 0 ? "under" : (e.saved < 0 ? "over" : "");
+        const sign = e.saved > 0 ? "-" : (e.saved < 0 ? "+" : "");
+        const savedStr = `${sign}${formatElapsed(Math.abs(e.saved))}`;
+        return `
+          <li class="leaderboard-row ${cls}">
+            <span class="rank">${rankIcon(i)}</span>
+            <span class="name">${e.name}</span>
+            <span class="runs">${e.runs} ${e.runs === 1 ? "run" : "runs"}</span>
+            <span class="saved ${savedCls}">${savedStr}</span>
+          </li>
+        `;
+      }).join("");
+      body = `<ul class="leaderboard-list">${rows}</ul>`;
+    }
+
+    const el = document.createElement("div");
+    el.className = "leaderboard-screen";
+    el.innerHTML = `
+      <h1>🏆 Leaderboard</h1>
+      <p class="subtitle">Total time saved across all rounds · this device only</p>
+      ${body}
+      <div class="btn-row">
+        <button class="btn-back" id="backBtn">Back</button>
+        ${entries.length ? `<button class="btn-over" id="resetBtn">Reset</button>` : ""}
+      </div>
+    `;
+    app.appendChild(el);
+
+    document.getElementById("backBtn").addEventListener("click", () => {
+      state.screen = "splash";
+      render();
+    });
+    const resetBtn = document.getElementById("resetBtn");
+    if (resetBtn) {
+      resetBtn.addEventListener("click", () => {
+        if (confirm("Clear the leaderboard? This cannot be undone.")) {
+          clearLeaderboard();
+          render();
+        }
+      });
+    }
   }
 
   render();
