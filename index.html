@@ -363,7 +363,7 @@
   const PRESET_SECONDS = 5 * 60;
   const MAX_TOTAL_SECONDS = 30 * 60;
   const MAX_CUSTOM_PEOPLE = 10;
-  const LEADERBOARD_KEY = "meeting-timer-leaderboard-v1";
+  const LEADERBOARD_KEY = "meeting-timer-leaderboard-v2";
 
   const app = document.getElementById("app");
 
@@ -382,6 +382,7 @@
     intervalId: null,
     flashTimeoutId: null,
     customDraft: "",       // remembered textarea content
+    returnTo: null,        // screen to return to from leaderboard
   };
 
   function shuffle(arr) {
@@ -429,21 +430,25 @@
     try { localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(data)); } catch {}
   }
   function recordRun(team, results) {
+    if (!team || team === "CUSTOM") return; // custom groups don't accumulate
     const data = loadLeaderboard();
+    const teamData = data[team] || {};
     results.forEach(r => {
-      const entry = data[r.name] || { saved: 0, elapsed: 0, allotted: 0, runs: 0, lastTeam: null, lastSeen: null };
+      const entry = teamData[r.name] || { saved: 0, elapsed: 0, allotted: 0, runs: 0, lastSeen: null };
       entry.saved += (r.allotted - r.elapsed);
       entry.elapsed += r.elapsed;
       entry.allotted += r.allotted;
       entry.runs += 1;
-      entry.lastTeam = team;
       entry.lastSeen = new Date().toISOString();
-      data[r.name] = entry;
+      teamData[r.name] = entry;
     });
+    data[team] = teamData;
     persistLeaderboard(data);
   }
-  function clearLeaderboard() {
-    try { localStorage.removeItem(LEADERBOARD_KEY); } catch {}
+  function clearLeaderboardForTeam(team) {
+    const data = loadLeaderboard();
+    delete data[team];
+    persistLeaderboard(data);
   }
 
   function assignRandomColors(names) {
@@ -514,7 +519,6 @@
         <span class="team-name">+ Custom Group</span>
         <span class="team-members">Up to 10 people · scales to fit 30:00</span>
       </button>
-      <button class="leaderboard-link" id="leaderboardLink">🏆 View Leaderboard</button>
     `;
     app.appendChild(el);
 
@@ -528,11 +532,6 @@
           selectPresetTeam(team);
         }
       });
-    });
-
-    document.getElementById("leaderboardLink").addEventListener("click", () => {
-      state.screen = "leaderboard";
-      render();
     });
   }
 
@@ -626,6 +625,7 @@
   function renderStart() {
     const totalMin = formatTime(state.secondsPerPerson * state.members.length);
     const c = teamColor();
+    const isPreset = state.team && state.team !== "CUSTOM";
     const el = document.createElement("div");
     el.className = "start-screen";
     el.innerHTML = `
@@ -637,6 +637,7 @@
         <button class="ghost">Pause</button>
         <button class="btn-done" id="startBtn">Start</button>
       </div>
+      ${isPreset ? `<button class="leaderboard-link" id="leaderboardLink">🏆 ${state.team} Leaderboard</button>` : ""}
     `;
     app.appendChild(el);
 
@@ -645,6 +646,13 @@
       state.screen = "splash";
       render();
     });
+    if (isPreset) {
+      document.getElementById("leaderboardLink").addEventListener("click", () => {
+        state.returnTo = "start";
+        state.screen = "leaderboard";
+        render();
+      });
+    }
   }
 
   function startRound() {
@@ -681,6 +689,7 @@
   function renderNext() {
     const totalMin = formatTime(state.secondsPerPerson * state.members.length);
     const c = teamColor();
+    const isPreset = state.team && state.team !== "CUSTOM";
     const el = document.createElement("div");
     el.className = "start-screen";
     el.innerHTML = `
@@ -692,9 +701,17 @@
         <button class="ghost">Pause</button>
         <button class="btn-done" id="nextBtn">Next</button>
       </div>
+      ${isPreset ? `<button class="leaderboard-link" id="leaderboardLink">🏆 ${state.team} Leaderboard</button>` : ""}
     `;
     app.appendChild(el);
     document.getElementById("nextBtn").addEventListener("click", beginPerson);
+    if (isPreset) {
+      document.getElementById("leaderboardLink").addEventListener("click", () => {
+        state.returnTo = "next";
+        state.screen = "leaderboard";
+        render();
+      });
+    }
   }
 
   // ---------- Flash ----------
@@ -822,7 +839,6 @@
         </li>
       </ul>
       <div class="btn-row">
-        <button id="leaderboardBtn">🏆 Leaderboard</button>
         <button class="btn-done" id="againBtn">Run Again</button>
       </div>
     `;
@@ -835,16 +851,15 @@
       state.results = [];
       render();
     });
-    document.getElementById("leaderboardBtn").addEventListener("click", () => {
-      state.screen = "leaderboard";
-      render();
-    });
   }
 
   // ---------- Leaderboard ----------
   function renderLeaderboard() {
-    const data = loadLeaderboard();
-    const entries = Object.entries(data)
+    const team = state.team;
+    const c = teamColor();
+    const allData = loadLeaderboard();
+    const teamData = allData[team] || {};
+    const entries = Object.entries(teamData)
       .map(([name, stats]) => ({ name, ...stats }))
       .sort((a, b) => b.saved - a.saved);
 
@@ -852,7 +867,7 @@
 
     let body;
     if (entries.length === 0) {
-      body = `<div class="empty-leaderboard">No data yet — run a standup to start tracking</div>`;
+      body = `<div class="empty-leaderboard">No data yet — finish a round to start tracking</div>`;
     } else {
       const rows = entries.map((e, i) => {
         const cls = i === 0 ? "top1" : i === 1 ? "top2" : i === 2 ? "top3" : "";
@@ -874,7 +889,7 @@
     const el = document.createElement("div");
     el.className = "leaderboard-screen";
     el.innerHTML = `
-      <h1>🏆 Leaderboard</h1>
+      <h1 style="color:${c}; text-shadow: 0 0 30px ${c};">🏆 ${team}</h1>
       <p class="subtitle">Total time saved across all rounds · this device only</p>
       ${body}
       <div class="btn-row">
@@ -885,14 +900,15 @@
     app.appendChild(el);
 
     document.getElementById("backBtn").addEventListener("click", () => {
-      state.screen = "splash";
+      state.screen = state.returnTo || "start";
+      state.returnTo = null;
       render();
     });
     const resetBtn = document.getElementById("resetBtn");
     if (resetBtn) {
       resetBtn.addEventListener("click", () => {
-        if (confirm("Clear the leaderboard? This cannot be undone.")) {
-          clearLeaderboard();
+        if (confirm(`Clear the ${team} leaderboard? This cannot be undone.`)) {
+          clearLeaderboardForTeam(team);
           render();
         }
       });
