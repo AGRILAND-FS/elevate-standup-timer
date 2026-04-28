@@ -79,7 +79,7 @@
   /* Splash screen */
   .splash-screen { width: 100%; max-width: 900px; }
   .splash-screen h1 {
-    font-size: 6rem;
+    font-size: 4rem;
     font-weight: 900;
     margin-bottom: 1.5rem;
     letter-spacing: 0.1em;
@@ -109,20 +109,25 @@
     padding: 2rem 1.5rem;
   }
   .team-btn .team-name {
-    font-size: 2rem;
+    font-size: clamp(1.1rem, 3.5vw, 2rem);
     font-weight: 900;
-    letter-spacing: 0.15em;
+    letter-spacing: 0.12em;
     color: var(--team-color, #fff);
     text-shadow: 0 0 20px var(--team-color, #fff);
     transition: color 0.2s, text-shadow 0.2s;
-    white-space: nowrap;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    line-height: 1.1;
   }
   .team-btn .team-members {
     font-family: 'Share Tech Mono', monospace;
     color: #888;
-    font-size: 0.95rem;
+    font-size: clamp(0.7rem, 1.5vw, 0.95rem);
     letter-spacing: 0.15em;
     text-transform: none;
+  }
+  @media (max-width: 600px) {
+    .team-grid { grid-template-columns: 1fr; }
   }
   .team-btn {
     border-color: var(--team-color, #fff);
@@ -259,7 +264,7 @@
   const TEAMS = {
     "ELEVATE":      { color: "#7FDBFF", members: ["Brian", "Mary", "Amber", "Lori", "Jeremy"] },
     "MARKETING":    { color: "#FF6B6B", members: ["Jill", "Ashley", "Adam", "Christine", "Tony"] },
-    "ENERGY":       { color: "#FFB347", members: ["Nicole", "Jessica", "Trina", "Heather", "Jeremy"] },
+    "ENERGY":       { color: "#FF7A1A", members: ["Nicole", "Jessica", "Trina", "Heather", "Jeremy"] },
     "PROJECT MGMT": { color: "#DFFF00", members: ["Mark", "Nate", "Jeremy"] },
   };
   const CUSTOM_COLOR = "#C0C0C0";
@@ -360,7 +365,7 @@
     const teamButtons = Object.entries(TEAMS).map(([name, info]) => `
       <button class="team-btn" data-team="${name}" style="--team-color:${info.color}">
         <span class="team-name">${name}</span>
-        <span class="team-members">${info.members.join(" · ")}</span>
+        <span class="team-members">${info.members.length} people · 5:00 each</span>
       </button>
     `).join("");
 
