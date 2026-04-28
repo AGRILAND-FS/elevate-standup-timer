@@ -14,12 +14,12 @@
     font-family: 'Orbitron', sans-serif;
     background: #000;
     color: #fff;
-    overflow: hidden;
+    overflow: auto;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
   body { display: flex; align-items: center; justify-content: center; text-align: center; }
-  #app { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 2rem; }
+  #app { width: 100%; min-height: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 2rem; }
 
   /* Start screen */
   .start-screen h1 {
@@ -53,17 +53,20 @@
     transition: transform 0.1s, background 0.2s, box-shadow 0.2s;
     min-width: 14rem;
   }
-  button:hover { background: #fff; color: #000; box-shadow: 0 0 30px rgba(255,255,255,0.6); }
-  button:active { transform: scale(0.97); }
+  button:hover:not(:disabled) { background: #fff; color: #000; box-shadow: 0 0 30px rgba(255,255,255,0.6); }
+  button:active:not(:disabled) { transform: scale(0.97); }
+  button:disabled { opacity: 0.3; cursor: not-allowed; }
   button.ghost { visibility: hidden; pointer-events: none; }
 
   .btn-row { display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; }
   .btn-done { border-color: #4ade80; color: #4ade80; }
-  .btn-done:hover { background: #4ade80; color: #000; box-shadow: 0 0 30px rgba(74,222,128,0.7); }
+  .btn-done:hover:not(:disabled) { background: #4ade80; color: #000; box-shadow: 0 0 30px rgba(74,222,128,0.7); }
   .btn-over { border-color: #fbbf24; color: #fbbf24; }
-  .btn-over:hover { background: #fbbf24; color: #000; box-shadow: 0 0 30px rgba(251,191,36,0.7); }
+  .btn-over:hover:not(:disabled) { background: #fbbf24; color: #000; box-shadow: 0 0 30px rgba(251,191,36,0.7); }
   .btn-pause { border-color: #60a5fa; color: #60a5fa; }
-  .btn-pause:hover { background: #60a5fa; color: #000; box-shadow: 0 0 30px rgba(96,165,250,0.7); }
+  .btn-pause:hover:not(:disabled) { background: #60a5fa; color: #000; box-shadow: 0 0 30px rgba(96,165,250,0.7); }
+  .btn-back { border-color: #888; color: #888; }
+  .btn-back:hover:not(:disabled) { background: #888; color: #000; box-shadow: 0 0 30px rgba(136,136,136,0.5); }
 
   .paused-banner {
     color: #60a5fa;
@@ -72,6 +75,89 @@
     letter-spacing: 0.3em;
     text-shadow: 0 0 20px rgba(96,165,250,0.7);
   }
+
+  /* Splash screen */
+  .splash-screen { width: 100%; max-width: 900px; }
+  .splash-screen h1 {
+    font-size: 6rem;
+    font-weight: 900;
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 30px rgba(255,255,255,0.4);
+  }
+  .splash-screen .subtitle {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #aaa;
+    margin-bottom: 3rem;
+    letter-spacing: 0.2em;
+  }
+  .team-list { display: flex; flex-direction: column; gap: 1.25rem; }
+  .team-btn {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem 2rem;
+  }
+  .team-btn .team-name {
+    font-size: 2.5rem;
+    font-weight: 900;
+    letter-spacing: 0.2em;
+  }
+  .team-btn .team-members {
+    font-family: 'Share Tech Mono', monospace;
+    color: #888;
+    font-size: 1rem;
+    letter-spacing: 0.15em;
+    text-transform: none;
+  }
+  .team-btn:hover .team-members { color: #000; }
+
+  /* Configure (custom) screen */
+  .config-screen { width: 100%; max-width: 700px; }
+  .config-screen h1 {
+    font-size: 5rem;
+    font-weight: 900;
+    margin-bottom: 1rem;
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 30px rgba(255,255,255,0.4);
+  }
+  .config-screen .subtitle {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #aaa;
+    margin-bottom: 2rem;
+    letter-spacing: 0.15em;
+  }
+  textarea#nameInput {
+    width: 100%;
+    min-height: 14rem;
+    padding: 1.25rem 1.5rem;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.5rem;
+    background: #111;
+    color: #fff;
+    border: 2px solid #444;
+    border-radius: 4px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  textarea#nameInput:focus { border-color: #4ade80; box-shadow: 0 0 20px rgba(74,222,128,0.4); }
+  .config-stats {
+    margin: 1.5rem 0 2rem;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.5rem;
+    color: #aaa;
+    letter-spacing: 0.15em;
+    min-height: 2rem;
+  }
+  .config-stats.error { color: #ef4444; }
 
   /* Flash screen */
   .flash-screen {
@@ -114,28 +200,34 @@
   /* Summary screen */
   .summary-screen { width: 100%; max-width: 900px; }
   .summary-screen h1 {
-    font-size: 5rem;
+    font-size: 4rem;
     font-weight: 900;
     letter-spacing: 0.1em;
-    margin-bottom: 3rem;
+    margin-bottom: 2rem;
     text-shadow: 0 0 30px rgba(255,255,255,0.4);
   }
   .summary-list { list-style: none; margin-bottom: 2.5rem; }
   .summary-row {
-    display: flex; justify-content: space-between; align-items: center;
+    display: flex; justify-content: space-between; align-items: center; gap: 1.5rem;
     padding: 1.5rem 2rem; margin-bottom: 1rem;
     border: 2px solid #333; border-radius: 4px;
     font-size: 2.25rem;
   }
-  .summary-row .name { font-weight: 800; letter-spacing: 0.1em; text-shadow: 0 0 20px currentColor; }
+  .summary-row .name { font-weight: 800; letter-spacing: 0.1em; text-shadow: 0 0 20px currentColor; flex: 1; text-align: left; }
+  .summary-row .name .rocket { margin-right: 0.75rem; filter: drop-shadow(0 0 10px #fbbf24); }
   .summary-row .time {
     font-family: 'Share Tech Mono', monospace;
     font-variant-numeric: tabular-nums;
     color: #aaa;
     letter-spacing: 0.05em;
+    text-align: right;
   }
   .summary-row .time.over { color: #ef4444; }
   .summary-row .time.under { color: #4ade80; }
+  .summary-row.winner {
+    border-color: #fbbf24;
+    box-shadow: 0 0 30px rgba(251,191,36,0.4);
+  }
   .total-row { border-color: #fff; margin-top: 2rem; font-weight: 900; }
 </style>
 </head>
@@ -144,29 +236,47 @@
 
 <script>
 (() => {
-  const PEOPLE = {
-    "Brian":  "#ffb800",
-    "Mary":   "#38bdf8",
-    "Amber":  "#d946ef",
-    "Lori":   "#ff1493",
-    "Jeremy": "#a3e635",
+  const TEAMS = {
+    "ELEVATE":  ["Brian", "Mary", "Amber", "Lori", "Jeremy"],
+    "MKTG":     ["Jill", "Ashley", "Adam", "Christine", "Tony"],
+    "BILLING":  ["Nicole", "Jessica", "Trina", "Heather", "Jeremy"],
+    "PMO":      ["Mark", "Nate", "Jeremy"],
   };
-  const NAMES = Object.keys(PEOPLE);
-  const ALLOTTED_SECONDS = 5 * 60;
+
+  const COLOR_PALETTE = [
+    "#ffb800", // gold
+    "#38bdf8", // sky blue
+    "#d946ef", // neon purple
+    "#ff1493", // neon pink
+    "#a3e635", // lime
+    "#22d3ee", // cyan
+    "#f97316", // orange
+    "#facc15", // yellow
+    "#fb7185", // rose
+    "#a78bfa", // violet
+  ];
+
+  const PRESET_SECONDS = 5 * 60;
+  const MAX_TOTAL_SECONDS = 30 * 60;
+  const MAX_CUSTOM_PEOPLE = 10;
 
   const app = document.getElementById("app");
 
   let state = {
-    screen: "start",
-    order: [],
+    screen: "splash",
+    team: null,            // team name string
+    members: [],           // ordered (post-shuffle) names
+    colors: {},            // name -> hex color (random per round)
+    secondsPerPerson: PRESET_SECONDS,
     currentIndex: 0,
-    remaining: ALLOTTED_SECONDS,
+    remaining: 0,
     elapsed: 0,
     overtimeAdded: 0,
     paused: false,
     results: [],
     intervalId: null,
     flashTimeoutId: null,
+    customDraft: "",       // remembered textarea content
   };
 
   function shuffle(arr) {
@@ -178,8 +288,17 @@
     return a;
   }
 
-  function colorFor(name) {
-    return PEOPLE[name] || "#ffffff";
+  function assignRandomColors(names) {
+    const palette = shuffle(COLOR_PALETTE);
+    const out = {};
+    names.forEach((name, i) => { out[name] = palette[i % palette.length]; });
+    return out;
+  }
+
+  // For custom groups: largest 30s-aligned slot per person such that total <= 30 min
+  function customSecondsPerPerson(n) {
+    if (n <= 0) return 0;
+    return Math.floor(MAX_TOTAL_SECONDS / n / 30) * 30;
   }
 
   function formatTime(totalSeconds) {
@@ -191,9 +310,11 @@
   }
 
   function formatElapsed(seconds) {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, "0")}`;
+    const sign = seconds < 0 ? "-" : "";
+    const s = Math.abs(seconds);
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${sign}${m}:${sec.toString().padStart(2, "0")}`;
   }
 
   function clearTimers() {
@@ -204,39 +325,170 @@
   function render() {
     clearTimers();
     app.innerHTML = "";
-    if (state.screen === "start") renderStart();
+    if (state.screen === "splash") renderSplash();
+    else if (state.screen === "configure") renderConfigure();
+    else if (state.screen === "start") renderStart();
     else if (state.screen === "next") renderNext();
     else if (state.screen === "flash") renderFlash();
     else if (state.screen === "timer") renderTimer();
     else if (state.screen === "summary") renderSummary();
   }
 
+  // ---------- Splash ----------
+  function renderSplash() {
+    const teamButtons = Object.entries(TEAMS).map(([name, people]) => `
+      <button class="team-btn" data-team="${name}">
+        <span class="team-name">${name}</span>
+        <span class="team-members">${people.join(" · ")} · ${people.length} people · 5:00 each</span>
+      </button>
+    `).join("");
+
+    const el = document.createElement("div");
+    el.className = "splash-screen";
+    el.innerHTML = `
+      <h1>Standup Timer</h1>
+      <p class="subtitle">Choose your team</p>
+      <div class="team-list">
+        ${teamButtons}
+        <button class="team-btn btn-done" data-team="__custom__">
+          <span class="team-name">+ Custom Group</span>
+          <span class="team-members">Up to 10 people · scales to fit 30:00</span>
+        </button>
+      </div>
+    `;
+    app.appendChild(el);
+
+    el.querySelectorAll(".team-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const team = btn.dataset.team;
+        if (team === "__custom__") {
+          state.screen = "configure";
+          render();
+        } else {
+          selectPresetTeam(team);
+        }
+      });
+    });
+  }
+
+  function selectPresetTeam(teamName) {
+    state.team = teamName;
+    state.members = TEAMS[teamName].slice();
+    state.secondsPerPerson = PRESET_SECONDS;
+    state.screen = "start";
+    render();
+  }
+
+  // ---------- Configure (custom) ----------
+  function renderConfigure() {
+    const el = document.createElement("div");
+    el.className = "config-screen";
+    el.innerHTML = `
+      <h1>Custom Group</h1>
+      <p class="subtitle">Up to ${MAX_CUSTOM_PEOPLE} people · scales to fit 30:00</p>
+      <textarea id="nameInput" placeholder="One name per line..."></textarea>
+      <div class="config-stats" id="configStats">&nbsp;</div>
+      <div class="btn-row">
+        <button class="btn-back" id="backBtn">Back</button>
+        <button class="ghost">Pause</button>
+        <button class="btn-done" id="continueBtn" disabled>Continue</button>
+      </div>
+    `;
+    app.appendChild(el);
+
+    const input = document.getElementById("nameInput");
+    const stats = document.getElementById("configStats");
+    const continueBtn = document.getElementById("continueBtn");
+    const backBtn = document.getElementById("backBtn");
+
+    input.value = state.customDraft || "";
+
+    function parseNames() {
+      return input.value
+        .split(/[\r\n,]+/)
+        .map(s => s.trim())
+        .filter(Boolean);
+    }
+
+    function updateStats() {
+      const names = parseNames();
+      const n = names.length;
+      state.customDraft = input.value;
+
+      if (n === 0) {
+        stats.textContent = "Enter at least 1 name";
+        stats.classList.remove("error");
+        continueBtn.disabled = true;
+        return;
+      }
+      if (n > MAX_CUSTOM_PEOPLE) {
+        stats.textContent = `Too many — max ${MAX_CUSTOM_PEOPLE}`;
+        stats.classList.add("error");
+        continueBtn.disabled = true;
+        return;
+      }
+      const perPerson = customSecondsPerPerson(n);
+      const total = perPerson * n;
+      stats.textContent = `${n} ${n === 1 ? "person" : "people"} × ${formatTime(perPerson)} each = ${formatTime(total)} total`;
+      stats.classList.remove("error");
+      continueBtn.disabled = false;
+    }
+
+    input.addEventListener("input", updateStats);
+    updateStats();
+    setTimeout(() => input.focus(), 50);
+
+    backBtn.addEventListener("click", () => {
+      state.screen = "splash";
+      render();
+    });
+
+    continueBtn.addEventListener("click", () => {
+      const names = parseNames();
+      if (names.length === 0 || names.length > MAX_CUSTOM_PEOPLE) return;
+      state.team = "CUSTOM";
+      state.members = names;
+      state.secondsPerPerson = customSecondsPerPerson(names.length);
+      state.screen = "start";
+      render();
+    });
+  }
+
+  // ---------- Start ----------
   function renderStart() {
+    const totalMin = formatTime(state.secondsPerPerson * state.members.length);
     const el = document.createElement("div");
     el.className = "start-screen";
     el.innerHTML = `
-      <h1>Standup Timer</h1>
-      <p>5 minutes per person · randomized</p>
-      <div class="names-preview">${NAMES.join(" · ")}</div>
+      <h1>${state.team}</h1>
+      <p>${formatTime(state.secondsPerPerson)} per person · ${totalMin} total</p>
+      <div class="names-preview">${state.members.join(" · ")}</div>
       <div class="btn-row">
-        <button class="ghost">+1 Minute</button>
+        <button class="btn-back" id="backBtn">Back</button>
         <button class="ghost">Pause</button>
         <button class="btn-done" id="startBtn">Start</button>
       </div>
     `;
     app.appendChild(el);
+
     document.getElementById("startBtn").addEventListener("click", startRound);
+    document.getElementById("backBtn").addEventListener("click", () => {
+      state.screen = "splash";
+      render();
+    });
   }
 
   function startRound() {
-    state.order = shuffle(NAMES);
+    const order = shuffle(state.members);
+    state.members = order;
+    state.colors = assignRandomColors(order);
     state.currentIndex = 0;
     state.results = [];
     beginPerson();
   }
 
   function beginPerson() {
-    state.remaining = ALLOTTED_SECONDS;
+    state.remaining = state.secondsPerPerson;
     state.elapsed = 0;
     state.overtimeAdded = 0;
     state.paused = false;
@@ -248,13 +500,15 @@
     }, 2500);
   }
 
+  // ---------- Next ----------
   function renderNext() {
+    const totalMin = formatTime(state.secondsPerPerson * state.members.length);
     const el = document.createElement("div");
     el.className = "start-screen";
     el.innerHTML = `
-      <h1>Standup Timer</h1>
-      <p>5 minutes per person · randomized</p>
-      <div class="names-preview">${NAMES.join(" · ")}</div>
+      <h1>${state.team}</h1>
+      <p>${formatTime(state.secondsPerPerson)} per person · ${totalMin} total</p>
+      <div class="names-preview">${state.members.join(" · ")}</div>
       <div class="btn-row">
         <button class="ghost">+1 Minute</button>
         <button class="ghost">Pause</button>
@@ -265,18 +519,20 @@
     document.getElementById("nextBtn").addEventListener("click", beginPerson);
   }
 
+  // ---------- Flash ----------
   function renderFlash() {
-    const name = state.order[state.currentIndex];
-    const color = colorFor(name);
+    const name = state.members[state.currentIndex];
+    const color = state.colors[name] || "#fff";
     const el = document.createElement("div");
     el.className = "flash-screen";
     el.innerHTML = `<div class="flash-name" style="color:${color}">${name}</div>`;
     app.appendChild(el);
   }
 
+  // ---------- Timer ----------
   function renderTimer() {
-    const name = state.order[state.currentIndex];
-    const color = colorFor(name);
+    const name = state.members[state.currentIndex];
+    const color = state.colors[name] || "#fff";
     const isOvertime = state.remaining < 0;
 
     const el = document.createElement("div");
@@ -284,7 +540,7 @@
     el.innerHTML = `
       <div class="timer-name" style="color:${color}">${name}</div>
       <div class="timer-clock ${isOvertime ? "overtime" : ""}">${formatTime(state.remaining)}</div>
-      <div class="timer-meta">Person ${state.currentIndex + 1} of ${state.order.length}${state.overtimeAdded ? ` · +${state.overtimeAdded}:00 overtime` : ""}</div>
+      <div class="timer-meta">Person ${state.currentIndex + 1} of ${state.members.length}${state.overtimeAdded ? ` · +${state.overtimeAdded}:00 overtime` : ""}</div>
       ${state.paused ? `<div class="paused-banner">● Paused for Discussion</div>` : ""}
       <div class="btn-row">
         <button class="btn-over" id="overBtn">+1 Minute</button>
@@ -316,23 +572,24 @@
           if (state.remaining < 0) clockEl.classList.add("overtime");
         }
         if (metaEl) {
-          metaEl.textContent = `Person ${state.currentIndex + 1} of ${state.order.length}${state.overtimeAdded ? ` · +${state.overtimeAdded}:00 overtime` : ""}`;
+          metaEl.textContent = `Person ${state.currentIndex + 1} of ${state.members.length}${state.overtimeAdded ? ` · +${state.overtimeAdded}:00 overtime` : ""}`;
         }
       }, 1000);
     }
   }
 
   function finishPerson() {
-    const name = state.order[state.currentIndex];
+    const name = state.members[state.currentIndex];
     state.results.push({
       name,
-      color: colorFor(name),
+      color: state.colors[name] || "#fff",
       elapsed: state.elapsed,
+      allotted: state.secondsPerPerson,
       overtimeAdded: state.overtimeAdded,
     });
 
     state.currentIndex += 1;
-    if (state.currentIndex >= state.order.length) {
+    if (state.currentIndex >= state.members.length) {
       state.screen = "summary";
     } else {
       state.screen = "next";
@@ -340,31 +597,48 @@
     render();
   }
 
+  // ---------- Summary ----------
   function renderSummary() {
     const total = state.results.reduce((sum, r) => sum + r.elapsed, 0);
+    const totalAllotted = state.results.reduce((sum, r) => sum + r.allotted, 0);
+    const totalSaved = totalAllotted - total;
 
-    const rows = state.results.map(r => {
-      const diff = r.elapsed - ALLOTTED_SECONDS;
+    // Rank by most time saved (allotted - elapsed), descending
+    const ranked = state.results
+      .map(r => ({ ...r, saved: r.allotted - r.elapsed }))
+      .sort((a, b) => b.saved - a.saved);
+
+    const winnerName = ranked[0]?.name;
+
+    const rows = ranked.map(r => {
+      const isWinner = r.name === winnerName;
       let cls = "";
       let label = "";
-      if (diff > 0) { cls = "over"; label = ` (+${formatElapsed(diff)})`; }
-      else if (diff < 0) { cls = "under"; label = ` (-${formatElapsed(-diff)})`; }
+      if (r.saved > 0) { cls = "under"; label = ` (-${formatElapsed(r.saved)})`; }
+      else if (r.saved < 0) { cls = "over"; label = ` (+${formatElapsed(-r.saved)})`; }
+      const rocket = isWinner ? `<span class="rocket">🚀</span>` : "";
       return `
-        <li class="summary-row">
-          <span class="name" style="color:${r.color}">${r.name}</span>
+        <li class="summary-row${isWinner ? " winner" : ""}">
+          <span class="name" style="color:${r.color}">${rocket}${r.name}</span>
           <span class="time ${cls}">${formatElapsed(r.elapsed)}${label}</span>
         </li>
       `;
     }).join("");
 
+    const totalCls = totalSaved > 0 ? "under" : (totalSaved < 0 ? "over" : "");
+    const totalLabel = totalSaved > 0
+      ? ` (-${formatElapsed(totalSaved)})`
+      : (totalSaved < 0 ? ` (+${formatElapsed(-totalSaved)})` : "");
+
     const el = document.createElement("div");
     el.className = "summary-screen";
     el.innerHTML = `
+      <h1>${state.team} · Done</h1>
       <ul class="summary-list">
         ${rows}
         <li class="summary-row total-row">
           <span class="name">Total</span>
-          <span class="time">${formatElapsed(total)}</span>
+          <span class="time ${totalCls}">${formatElapsed(total)}${totalLabel}</span>
         </li>
       </ul>
       <div class="btn-row">
@@ -373,7 +647,11 @@
     `;
     app.appendChild(el);
     document.getElementById("againBtn").addEventListener("click", () => {
-      state.screen = "start";
+      state.screen = "splash";
+      state.team = null;
+      state.members = [];
+      state.colors = {};
+      state.results = [];
       render();
     });
   }
